@@ -1,27 +1,21 @@
 const express = require('express');
-const dotenv = require('dotenv');
-const webhookController = require('./controllers/webhook');
-
-dotenv.config();
+const config = require('./config');
+const webhook = require('./controllers/webhook');
 
 const app = express();
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
-// Middleware to parse JSON and URL-encoded data
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.get('/webhook', webhook.verifyWebhook);
+app.post('/webhook', webhook.handleWebhook);
 
-// Webhook route
-app.post('/webhook', webhookController.handleWebhook);
+app.get('/', (req, res) => res.send('TriEV WhatsApp CRM Bot is running!'));
+app.get('/health', (req, res) => res.json({ ok: true, dryRun: config.dryRun, activeSessions: webhook.sessions.size }));
 
-// Basic health check route
-app.get('/', (req, res) => {
-  res.send('TriEV WhatsApp CRM Bot is running!');
-});
-
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+if (require.main === module) {
+    app.listen(config.port, () => {
+        console.log(`Server on :${config.port}${config.dryRun ? ' (DRY_RUN: nothing is sent to WhatsApp)' : ''}`);
+    });
+}
 
 module.exports = app;

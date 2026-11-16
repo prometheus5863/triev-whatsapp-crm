@@ -4,10 +4,15 @@
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "node --watch src/app.js",
+    "test": "node --test",
+    "simulate": "node verify_webhook.js"
   },
   "dependencies": {
     "dotenv": "^16.6.1",
     "express": "^4.22.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

@@ -1,29 +1,24 @@
-const saveTicketToSheet = async (ticketData) => {
-    const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz50JXDNchqwYEhK3igrMSNJBewqbh3MdMMNCBoBrinEmhJwd8loAca1pZhxArmfE7E/exec';
+const config = require('../config');
 
-    try {
-        const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-            method: "POST",
-            redirect: "follow",
-            headers: {
-                "Content-Type": "text/plain;charset=utf-8",
-            },
-            body: JSON.stringify(ticketData),
-        });
+// Tickets saved in DRY_RUN (no SHEET_WEBHOOK_URL) stay in memory.
+const memory = [];
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Successfully saved to Google Sheet:', data);
-        return data;
-    } catch (error) {
-        console.error('Error saving ticket to Google Sheet:', error);
-        throw error;
+async function saveTicket(ticket) {
+    if (config.dryRun || !config.sheetWebhookUrl) {
+        memory.push(ticket);
+        return { dryRun: true };
     }
-};
+    // Google Apps Script web app that appends a row to the tickets sheet
+    // (AppSheet reads the same sheet). text/plain avoids a CORS preflight.
+    const res = await fetch(config.sheetWebhookUrl, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(ticket),
+        signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`Sheet save failed: HTTP ${res.status}`);
+    return res.json().catch(() => ({}));
+}
 
-module.exports = {
-    saveTicketToSheet,
-};
+module.exports = { saveTicket, memory };

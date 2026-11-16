@@ -22,12 +22,12 @@ const sendWebhook = (text, source = "919876543210") => {
 
         const options = {
             hostname: 'localhost',
-            port: 3000,
+            port: process.env.PORT || 3000,
             path: '/webhook',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Content-Length': payload.length
+                'Content-Length': Buffer.byteLength(payload)
             }
         };
 
@@ -60,7 +60,7 @@ const runSimulation = async () => {
     await new Promise(r => setTimeout(r, 1000));
 
     // 3. Select Category
-    await sendWebhook("Battery");
+    await sendWebhook("1");
     await new Promise(r => setTimeout(r, 1000));
 
     // 4. Send Note
